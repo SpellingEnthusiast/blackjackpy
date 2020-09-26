@@ -2,6 +2,21 @@
 import random
 import reading_from_user
 
+money = 1000
+bet = 0
+
+def load_stats():
+    global money
+    file = open('save.txt', 'r')
+    money = int(file.read())
+    file.close()
+
+def save_stats():
+    global money
+    file = open('save.txt', 'w')
+    file.write(str(money))
+    file.close()
+
 
 def create_deck():
 
@@ -24,6 +39,8 @@ global deck
 deck = create_deck()
 
 def deal_cards():
+    global money
+    global bet
     dealer_hand = []
     dealer_total = 0
     player_hand = []
@@ -57,12 +74,26 @@ def deal_cards():
         print(" Total: " + str(dealer_total))
         print("Player has: " + str(player_hand))
         print(" Total: " + str(player_total))
-        print("Would you like to hit (h) or stand (s)?")
-        x = input()
+
+
+        if player_total == 21 and len(player_hand) == 2:
+            print("Blackjack!")
+            print("You won: " + str(bet * 1.5))
+            money += bet * 1.5
+
+        elif player_total == 21:
+            x = 's'
+
+        elif player_total < 21:
+            print("Would you like to hit (h) or stand (s)?")
+            x = input()
+            
         if x == 'h':
             player_total, ace_p = hit(player_hand, player_total, ace_p)
             if player_total > 21:
                 print("PLAYER BUST -- DEALER WINS")
+                money -= bet
+                print("You lost: " + str(bet))
                 break
 
         if x == 's':
@@ -74,9 +105,13 @@ def deal_cards():
                 print("Player has: " + str(player_hand) + " Total: " + str(player_total))
                 if dealer_total > player_total:
                     print("DEALER WINS")
+                    money -= bet
+                    print("You lost: " + str(bet))
 
                 elif player_total > dealer_total:
                     print("PLAYER WINS")
+                    money += bet
+                    print("You won: " + str(bet))
                 
                 elif player_total == dealer_total:
                     print("PUSH")
@@ -86,6 +121,8 @@ def deal_cards():
             elif dealer_total > 21:
                 print("Dealer has: " + str(dealer_hand) + " " + str(dealer_total))
                 print("DEALER BUST -- PLAYER WINS")
+                money += bet
+                print("You won: " + str(bet))
                 break
 
 
@@ -127,13 +164,33 @@ def stand(dealer_hand, dealer_total, ace_d):
     print("Dealer has: " + str(dealer_hand) + " Total: " + str(dealer_total))
     return dealer_total, ace_d
     
+def handle_bet(bet):
+    menu = "Please place a bet\n>> "
+    bet = reading_from_user.read_positive_integer(menu)
+    return bet
+
 def show_menu():
-    menu = "Please select an option from below.\n1. Start game\n2. Quit game\n>> "
+    global bet
+    load_stats()
+    menu = "Please select an option from below.\n1. Start game\n2. Quit + save game\n>> "
     while True:
+        if money == 0:
+            print("You ran out of money! Better luck next time.")
+            file = open('save.txt', 'w')
+            file.write('1000')
+            file.close()
+            break
+        print("Current balance: " + str(money))
         choice = reading_from_user.read_positive_integer(menu)
         if choice == 1:
+            print("Current balance: " + str(money))
+            bet = handle_bet(bet)
+            while bet > money:
+                print("You cannot bet more than you have.")
+                bet = handle_bet(bet)
             deal_cards()
         elif choice == 2:
+            save_stats()
             break
     return choice
 
